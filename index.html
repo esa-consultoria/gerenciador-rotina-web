@@ -9,7 +9,7 @@
 <script>
 'use strict';const KEY='minha_rotina_v1';const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];const INITIAL=[
 ['Espiritualidade','Ir à missa','Fixa',[5],90,'17:00','Semanal'],['Espiritualidade','Leitura de algo bíblico','Fixa',[0,1,2,3,4,5,6],15,'','Diária'],['Saúde','Karatê','Fixa',[1,3,5],120,'19:00','Semanal'],['Saúde','Musculação','Fixa',[2,4,6],15,'','Semanal'],['Saúde','Corrida','Fixa',[0,6],90,'07:00','Semanal'],['Família','Brincar','Fixa',[0,2,4,6],30,'','Semanal'],['Família','Lavar quintal','Variável',[],180,'','Quinzenal'],['Família','Levar e buscar o Otávio na missa','Fixa',[6],30,'','Semanal'],['Família','Buscar o Otávio na Natação','Fixa',[4],30,'18:15','Semanal'],['Família','Impermeabilização da laje','Variável',[],240,'','Anual'],['Espiritualidade','Doar sangue','Variável',[],120,'','Trimestral'],['Espiritualidade','Fazer doação Goas','Variável',[],15,'','Mensal'],['Família',"Lavar caixa d'água",'Variável',[],120,'','Semestral'],['Família','Cortar grama','Variável',[],180,'','Quinzenal'],['Trabalho','Lavar o carro','Variável',[],180,'','Quinzenal'],['Trabalho','Trabalho nos clientes','Fixa',[1,2,3,4,5],60,'','Semanal'],['Trabalho','Trabalho ESA','Fixa',[1,2,3,4,5],120,'','Semanal'],['Trabalho','Trabalho Fractal QMS','Fixa',[1,2,3,4,5],30,'','Semanal'],['Família','Passar na casa da mãe','Fixa',[0,2,6],15,'','Semanal'],['Amigos','Marcar com os amigos','Variável',[],60,'','Bimestral']];
-const seed=()=>({version:1,activated:false,start:'2026-11-01',activities:INITIAL.map((a,i)=>({id:'base-'+(i+1),category:a[0],name:a[1],type:a[2],days:a[3],duration:a[4],time:a[5],frequency:a[6],start:'2026-11-01',notes:'',validated:false})),done:{}});let state;try{const stored=JSON.parse(localStorage.getItem(KEY));state=stored&&Array.isArray(stored.activities)?stored:seed()}catch{state=seed()}state.scheduled=Array.isArray(state.scheduled)?state.scheduled:[];state.sessions=Array.isArray(state.sessions)?state.sessions:[];const chosenDates={};let view='today',date=new Date().toLocaleDateString('en-CA'),editing=null;let rangeStart='2027-01-01',rangeEnd='2027-01-31',searchTerm='';const $=id=>document.getElementById(id),save=()=>localStorage.setItem(KEY,JSON.stringify(state)),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),duration=n=>Math.floor(n/60)?`${Math.floor(n/60)}h${n%60?String(n%60).padStart(2,'0'):''}`:`${n} min`,weekday=s=>new Date(s+'T12:00:00').getDay(),todayItems=()=>state.activities.filter(a=>a.type==='Fixa'&&a.days.includes(weekday(date))&&date>=a.start).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99')),doneKey=a=>date+'|'+a.id;
+const seed=()=>({version:1,activated:false,start:'2026-11-01',activities:INITIAL.map((a,i)=>({id:'base-'+(i+1),category:a[0],name:a[1],type:a[2],days:a[3],duration:a[4],time:a[5],frequency:a[6],start:'2026-11-01',notes:'',validated:false})),done:{}});let state;try{const stored=JSON.parse(localStorage.getItem(KEY));state=stored&&Array.isArray(stored.activities)?stored:seed()}catch{state=seed()}state.scheduled=Array.isArray(state.scheduled)?state.scheduled:[];state.sessions=Array.isArray(state.sessions)?state.sessions:[];const chosenDates={};let view='today',date=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(new Date().getDate()).padStart(2,'0'),editing=null;let rangeStart='2027-01-01',rangeEnd='2027-01-31',searchTerm='';const $=id=>document.getElementById(id),save=()=>localStorage.setItem(KEY,JSON.stringify(state)),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),duration=n=>Math.floor(n/60)?`${Math.floor(n/60)}h${n%60?String(n%60).padStart(2,'0'):''}`:`${n} min`,weekday=s=>new Date(s+'T12:00:00').getDay(),todayItems=()=>state.activities.filter(a=>a.type==='Fixa'&&a.days.includes(weekday(date))&&date>=a.start).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99')),doneKey=a=>date+'|'+a.id;
 
  const priority=['Espiritualidade','Saúde','Família','Trabalho','Amigos'];
  const localISO=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -27,6 +27,83 @@ const seed=()=>({version:1,activated:false,start:'2026-11-01',activities:INITIAL
  function scheduledCards(ds){return bookedOn(ds).map(b=>{const a=state.activities.find(x=>x.id===b.activityId);if(!a)return '';const done=!!state.done[ds+'|'+a.id];return `<div class="item"><div><div class="item-title">${esc(a.name)}</div><span class="tag">${esc(a.category)}</span><span class="tag gray">Variável · ${duration(b.duration)}</span>${done?'<span class="tag">Concluída</span>':''}</div><div class="actions"><button class="btn tiny ${done?'secondary':''}" data-done="${esc(a.id)}">${done?'Desfazer':'Concluir'}</button><button class="btn tiny secondary" data-unbook="${esc(b.id)}">Cancelar agendamento</button></div></div>`}).join('')}
 function nav(){const links=[['today','◷','Hoje'],['week','▦','Semana'],['activities','☷','Atividades'],['pending','◉','Pendências'],['settings','⚙','Configurações']];for(const target of ['nav','bottom'])$(target).innerHTML=links.map(([v,i,n])=>`<button class="${view===v?'active':''}" data-view="${v}">${i} ${n}</button>`).join('');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()})}
 function card(a,options={}){const done=!!state.done[doneKey(a)];return `<div class="item"><div><div class="item-title">${esc(a.name)}</div><span class="tag">${esc(a.category)}</span><span class="tag gray">${duration(a.duration)} · ${a.time||'Horário a definir'}</span>${options.showFrequency?`<span class="tag gray">${esc(a.frequency)}</span>`:''}${done?'<span class="tag">Concluída</span>':''}</div><div class="actions">${options.track?`<button class="btn tiny ${done?'secondary':''}" data-done="${esc(a.id)}" ${!state.activated?'disabled title="Ative a rotina após validar as atividades"':''}>${done?'Desfazer':'Concluir'}</button>`:''}<button class="btn tiny secondary" data-edit="${esc(a.id)}">Editar</button></div></div>`}
+
+// Funções complementares da V3: categorias, capacidade, notificações e registro de tempo.
+function catClass(a){return 'category-'+(a?.category||'').replace(/[^\p{L}]/gu,'')}
+function formatDateBR(ds){return ds.split('-').reverse().join('/')}
+function formatMinutes(n){return duration(Math.max(0,Math.round(n)))}
+function periodCapacity(from,to){
+ let limit=0,booked=0,fixed=0,days=0;
+ for(let ds=from;ds<=to;ds=shift(ds,1)){
+  const c=capacity(ds);limit+=c.limit;booked+=c.booked;fixed+=c.fixed;days++;
+ }
+ return {limit,booked,fixed,days};
+}
+function capacityDashboard(){
+ const ref=new Date(date+'T12:00:00'),year=ref.getFullYear(),month=String(ref.getMonth()+1).padStart(2,'0');
+ const weekStart=shift(date,-weekday(date));
+ const periods=[['Ano',`${year}-01-01`,`${year}-12-31`],['Mês',`${year}-${month}-01`,localISO(new Date(year,ref.getMonth()+1,0))],['Semana',weekStart,shift(weekStart,6)],['Dia',date,date]];
+ return `<section class="panel"><h2>Capacidade planejada</h2><p class="muted">Períodos relativos à data da agenda (${formatDateBR(date)}). Limite de 80% do tempo disponível após atividades fixas; reserva de 20% preservada.</p><div class="capacity-grid">${periods.map(([label,from,to])=>{
+  const c=periodCapacity(from,to),pct=c.limit?Math.min(100,Math.round(c.booked/c.limit*100)):0;
+  return `<div class="panel"><span class="muted">${label}</span><strong>${formatMinutes(c.booked)} / ${formatMinutes(c.limit)}</strong><div class="progress" aria-label="${pct}% da capacidade de atividades variáveis utilizada"><span style="width:${pct}%"></span></div><div class="muted" style="font-size:12px">${pct}% reservado · ${c.days} dia(s)<div>Fixas: ${formatMinutes(c.fixed)}</div><div>Disponível para variáveis: ${formatMinutes(c.limit-c.booked)}</div></div></div>`;
+ }).join('')}</div></section>`;
+}
+function pendingDeadlines(){
+ const now=localISO(new Date()),horizon=shift(now,30),items=[];
+ for(const a of state.activities.filter(a=>a.type==='Variável')){
+  const previous=state.scheduled.filter(b=>b.activityId===a.id).sort((x,y)=>y.date.localeCompare(x.date))[0];
+  const interval=intervals[a.frequency]||0;
+  const due=previous&&interval?shift(previous.date,interval):(a.start||state.start||'2026-11-01');
+  if(due>horizon)continue;
+  if(state.scheduled.some(b=>b.activityId===a.id&&b.date>=now&&b.date<=shift(due,7)))continue;
+  const days=Math.round((new Date(due+'T12:00:00')-new Date(now+'T12:00:00'))/86400000);
+  items.push({a,due,days});
+ }
+ return items;
+}
+function renderNotifications(){
+ const bar=$('notificationBar');if(!bar)return;
+ const items=pendingDeadlines(),counts=[items.filter(x=>x.days<=30).length,items.filter(x=>x.days<=7).length,items.filter(x=>x.days<=0).length];
+ bar.innerHTML=`<button type="button" id="noticeMonth" title="Pendências nos próximos 30 dias"><span class="dot green"></span>30 dias: ${counts[0]}</button><button type="button" id="noticeWeek" title="Pendências nos próximos 7 dias"><span class="dot yellow"></span>7 dias: ${counts[1]}</button><button type="button" id="noticeDay" title="Pendências de hoje ou vencidas"><span class="dot red"></span>Hoje: ${counts[2]}</button>`;
+ [['noticeMonth',30],['noticeWeek',7],['noticeDay',0]].forEach(([id,n])=>{$(id).onclick=()=>{
+  const list=items.filter(x=>x.days<=n);alert(list.length?list.map(x=>`${x.a.name}: ${formatDateBR(x.due)}${x.days<0?' (vencida)':''}`).join('\n'):'Nenhuma pendência neste prazo.');
+ }});
+}
+function activeSession(aid,ds){return state.sessions.find(s=>s.activityId===aid&&s.date===ds&&!s.end)}
+function completedSessions(aid,ds){return state.sessions.filter(s=>s.activityId===aid&&s.date===ds&&s.end)}
+function elapsedMs(s){return Math.max(0,(s.end||Date.now())-s.start)}
+function timerControls(a,ds){
+ const active=activeSession(a.id,ds),finished=completedSessions(a.id,ds);
+ const total=finished.reduce((n,s)=>n+elapsedMs(s),0)+(active?elapsedMs(active):0);
+ return `<span class="timer" data-timer="${esc(a.id)}" data-date="${ds}">${total?clock(total):'00:00:00'}</span><button type="button" class="btn tiny ${active?'danger':'secondary'}" data-timer-action="${active?'stop':'start'}" data-activity="${esc(a.id)}" data-date="${ds}">${active?'Finalizar':'Iniciar'}</button>`;
+}
+function clock(ms){const secs=Math.floor(ms/1000);return [Math.floor(secs/3600),Math.floor(secs%3600/60),secs%60].map(x=>String(x).padStart(2,'0')).join(':')}
+function bindTimers(){
+ document.querySelectorAll('[data-timer-action]').forEach(btn=>btn.onclick=()=>{
+  const aid=btn.dataset.activity,ds=btn.dataset.date,activity=state.activities.find(a=>a.id===aid);
+  if(!activity)return;
+  if(btn.dataset.timerAction==='start'){
+   if(state.sessions.some(s=>!s.end)){alert('Há outra atividade em andamento. Finalize-a antes de iniciar uma nova.');return}
+   if(!confirm(`Iniciar contagem de tempo para ${activity.name} em ${formatDateBR(ds)}?`))return;
+   state.sessions.push({activityId:aid,date:ds,start:Date.now(),end:null});
+  }else{
+   const session=activeSession(aid,ds);if(!session)return;
+   if(!confirm(`Finalizar a contagem de ${activity.name}?`))return;
+   session.end=Date.now();
+   state.done[ds+'|'+aid]=true;
+  }
+  save();render();
+ });
+}
+function updateTimers(){
+ if(!Array.isArray(state.sessions))return;
+ document.querySelectorAll('[data-timer]').forEach(el=>{
+  const aid=el.dataset.timer,ds=el.dataset.date;
+  const total=state.sessions.filter(s=>s.activityId===aid&&s.date===ds).reduce((n,s)=>n+elapsedMs(s),0);
+  el.textContent=clock(total);
+ });
+}
+
 function render(){nav();renderNotifications();const titles={today:'Agenda do Dia',week:'Agenda semanal',activities:'Cadastro de atividades',pending:'Pendências',settings:'Configurações'};$('pageTitle').textContent=titles[view];$('newBtn').style.display=view==='settings'?'none':'';const fixed=state.activities.filter(a=>a.type==='Fixa').length;const variable=state.activities.length-fixed;let html='';if(view==='today'){const items=todayItems(),minutes=items.reduce((n,a)=>n+a.duration,0),booked=bookedOn(date);html=`<div class="stats"><div class="panel stat"><span class="muted">Atividades</span><strong>${items.length+booked.length}</strong></div><div class="panel stat"><span class="muted">Horas fixas</span><strong>${duration(minutes)}</strong></div><div class="panel stat"><span class="muted">Concluídas</span><strong>${[...items,...booked.map(b=>state.activities.find(a=>a.id===b.activityId)).filter(Boolean)].filter(a=>state.done[doneKey(a)]).length}</strong></div></div>${!state.activated?'<div class="panel notice"><strong>Programação ainda não ativada.</strong><p>Confira as atividades em Cadastro e aprove a ativação em Configurações. A agenda é apenas uma prévia.</p></div>':''}<section class="panel"><div class="row"><h2>Compromissos do dia</h2><input aria-label="Selecionar dia" type="date" id="dayPicker" value="${date}"></div>${items.length||booked.length?items.map(a=>card(a,{track:true})).join('')+scheduledCards(date):'<div class="empty">Nenhuma atividade cadastrada para esta data.</div>'}</section><div class="panel"><strong>Avaliação de capacidade</strong><p class="muted">Disponibilidade após necessidades, deslocamento e compromissos fixos: ${duration(capacity(date).free)}. Limite de 80% para atividades variáveis: ${duration(capacity(date).limit)}; agendado: ${duration(capacity(date).booked)}. A reserva de 20% já está incluída neste limite, sem desconto duplo. Conflitos de horário específico ainda exigem conferência manual.</p></div>`}
 if(view==='today')html+=capacityDashboard();
 if(view==='activities'){html=`<div class="stats"><div class="panel stat"><span class="muted">Total</span><strong>${state.activities.length}</strong></div><div class="panel stat"><span class="muted">Fixas</span><strong>${fixed}</strong></div><div class="panel stat"><span class="muted">Variáveis</span><strong>${variable}</strong></div></div><section class="panel"><div class="filters"><select id="catFilter" aria-label="Filtrar categoria"><option value="">Todas as categorias</option>${['Espiritualidade','Saúde','Família','Trabalho','Amigos'].map(c=>`<option>${c}</option>`).join('')}</select><select id="typeFilter" aria-label="Filtrar tipo"><option value="">Todos os tipos</option><option>Fixa</option><option>Variável</option></select></div><div id="activityList"></div></section>`}
@@ -104,10 +181,10 @@ function bindReschedule(){
 function bindCards(){document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(b.dataset.edit));document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const k=date+'|'+b.dataset.done;if(state.done[k])delete state.done[k];else state.done[k]=true;save();render()});document.querySelectorAll('[data-unbook]').forEach(b=>b.onclick=()=>{if(!confirm('Cancelar agendamento?'))return;state.scheduled=state.scheduled.filter(x=>x.id!==b.dataset.unbook);save();render()})}
  function bindScheduling(){
  const feedback=(id)=>{const a=state.activities.find(x=>x.id===id),el=document.querySelector(`[data-pick="${id}"]`),out=document.querySelector(`[data-feedback="${id}"]`);if(!a||!el||!out)return;const ds=el.value;if(!ds){out.textContent='Escolha uma data.';return}const c=capacity(ds),remaining=c.limit-c.booked,weekday=new Date(ds+'T12:00:00').getDay();const notes=[];notes.push(`Limite diário: ${duration(c.limit)}; já agendado: ${duration(c.booked)}; disponível para variáveis: ${duration(Math.max(0,remaining))}.`);if(a.duration>remaining)notes.push('Capacidade excedida: escolha outra data.');if(a.name==='Doar sangue'&&weekday!==6)notes.push('Atenção: preferência cadastrada para sábados.');if(state.scheduled.some(x=>x.activityId===id&&x.date===ds))notes.push('Esta atividade já está agendada nesta data.');out.textContent=notes.join(' ')};
- document.querySelectorAll('[data-pick]').forEach(el=>{el.onchange=()=>{chosenDates[el.dataset.pick]=el.value;feedback(el.dataset.pick)};feedback(el.dataset.pick)});
+ document.querySelectorAll('[data-pick]').forEach(el=>{el.oninput=()=>{chosenDates[el.dataset.pick]=el.value;feedback(el.dataset.pick)};el.onchange=el.oninput;feedback(el.dataset.pick)});
  document.querySelectorAll('[data-manual]').forEach(b=>b.onclick=()=>{const id=b.dataset.manual,a=state.activities.find(x=>x.id===id),ds=document.querySelector(`[data-pick="${id}"]`)?.value;if(!a||!ds)return;if(ds<'2026-11-01'){alert('A rotina começa em 01/11/2026.');return}if(state.scheduled.some(x=>x.activityId===id&&x.date===ds)){alert('Esta atividade já está agendada nesta data.');return}const c=capacity(ds);if(c.booked+Number(a.duration)>c.limit){alert('Esta data ultrapassa o limite de 80% da capacidade diária. Escolha outra data.');return}if(a.name==='Doar sangue'&&new Date(ds+'T12:00:00').getDay()!==6&&!confirm('A preferência para doar sangue é sábado. Deseja manter esta outra data?'))return;if(!confirm(`Confirmar ${a.name} em ${ds.split('-').reverse().join('/')}?`))return;delete chosenDates[id];state.scheduled.push({id:'booking-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),activityId:a.id,date:ds,duration:a.duration});save();render()});
  document.querySelectorAll('[data-unbook]').forEach(b=>b.onclick=()=>{if(!confirm('Cancelar este agendamento? O cadastro da atividade será preservado.'))return;state.scheduled=state.scheduled.filter(x=>x.id!==b.dataset.unbook);save();render()})}
-function bindSettings(){$('activate').onclick=()=>{if(!state.activated&&!$('approval').checked){alert('Marque a autorização antes de ativar.');return}state.activated=$('approval').checked;save();render()};$('export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='minha-rotina-backup-'+date+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};$('import').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.activities)||typeof x.done!=='object')throw Error('Formato inválido');if(!confirm('Substituir todos os dados locais deste dispositivo pelo arquivo selecionado? Faça uma exportação antes de continuar.'))return;state=x;state.scheduled=Array.isArray(state.scheduled)?state.scheduled:[];save();render();alert('Dados importados.')}catch(err){alert('Não foi possível importar: '+err.message)}}}
+function bindSettings(){$('activate').onclick=()=>{if(!state.activated&&!$('approval').checked){alert('Marque a autorização antes de ativar.');return}state.activated=$('approval').checked;save();render()};$('export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='minha-rotina-backup-'+date+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};$('import').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.activities)||typeof x.done!=='object')throw Error('Formato inválido');if(!confirm('Substituir todos os dados locais deste dispositivo pelo arquivo selecionado? Faça uma exportação antes de continuar.'))return;state=x;state.scheduled=Array.isArray(state.scheduled)?state.scheduled:[];state.sessions=Array.isArray(state.sessions)?state.sessions:[];save();render();alert('Dados importados.')}catch(err){alert('Não foi possível importar: '+err.message)}}}
 function openForm(id){editing=id||null;const a=state.activities.find(x=>x.id===id)||{name:'',category:'Família',type:'Variável',duration:30,time:'',frequency:'Semanal',days:[],start:'2026-11-01',notes:''};$('formTitle').textContent=id?'Editar atividade':'Nova atividade';for(const [field,key] of [['fName','name'],['fCategory','category'],['fType','type'],['fDuration','duration'],['fTime','time'],['fFrequency','frequency'],['fStart','start'],['fNotes','notes']])$(field).value=a[key]??'';$('daychecks').innerHTML=DAYS.map((d,i)=>`<label><input type="checkbox" value="${i}" ${a.days.includes(i)?'checked':''}>${d}</label>`).join('');$('dialog').showModal()}
 $('newBtn').onclick=()=>openForm();$('cancelForm').onclick=()=>$('dialog').close();$('activityForm').onsubmit=e=>{e.preventDefault();const a={id:editing||'user-'+Date.now(),name:$('fName').value.trim(),category:$('fCategory').value,type:$('fType').value,duration:Number($('fDuration').value),time:$('fTime').value,frequency:$('fFrequency').value,start:$('fStart').value||'2026-11-01',days:[...$('daychecks').querySelectorAll('input:checked')].map(x=>Number(x.value)),notes:$('fNotes').value,validated:false};if(!a.name||a.duration<1)return;if(editing){const i=state.activities.findIndex(x=>x.id===editing);if(i>=0)state.activities[i]=a}else state.activities.push(a);save();$('dialog').close();render()};save();render();setInterval(updateTimers,1000);
 </script></body></html>
